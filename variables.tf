@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "aws_profile" {
   description = "The AWS CLI profile to use"
   type        = string
-  default     = "Olisaemeka"  # your current profile
+  default     = "default"  # your current profile
 }
 
 variable "instance_type" {

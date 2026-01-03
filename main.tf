@@ -2,21 +2,76 @@ provider "aws" {
   region = var.aws_region
   profile = var.aws_profile
 }
+ 
+ data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
 
 # create an instance
-resource "aws_instance" "instance_main" {
-  ami           = "ami-068c0051b15cdb816"
+resource "aws_instance" "firstinstance" {
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.sub_main.id
 
   vpc_security_group_ids = [
     aws_security_group.allow_tls.id
   ]
+  key_name = olisa_keypair
+
+user_data = file("install_jenkins.sh")
+
 
   tags = {
     Name = "HelloWorld"
   }
 }
+
+# create an instance for tomcat
+resource "aws_instance" "secondinstance" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.sub_main.id
+
+  vpc_security_group_ids = [
+    aws_security_group.allow_tls.id
+  ]
+  key_name = olisa_keypair
+
+user_data = file("install_Tomcat.sh")
+
+
+  tags = {
+    Name = "Tomcat_Server"
+  }
+}
+
+# print the url of the jenkins server
+output "tomcat_url" {
+  value = "http://${aws_instance.firstinstance.public_ip}:8080"
+  description = "jenkins server which is firsinstance from resource block"
+}
+
+# print the url of the tomcat server
+output "tomcat_url" {
+  value = "http://${aws_instance.secondinstance.public_ip}:8080"
+  description = "Tomcat server is secondinstance"
+}
+
+
+
 
 
 # create a VPC
@@ -92,6 +147,13 @@ resource "aws_security_group" "allow_tls" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.VPC_main.cidr_block]
+  }
+
+ingress {
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = [aws_vpc.VPC_main.cidr_block]
   }
