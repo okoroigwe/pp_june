@@ -29,7 +29,7 @@ resource "aws_instance" "firstinstance" {
   vpc_security_group_ids = [
     aws_security_group.allow_tls.id
   ]
-  key_name = olisa_keypair
+  key_name = "olisa_keypair"
 
 user_data = file("install_jenkins.sh")
 
@@ -48,9 +48,9 @@ resource "aws_instance" "secondinstance" {
   vpc_security_group_ids = [
     aws_security_group.allow_tls.id
   ]
-  key_name = olisa_keypair
+  key_name = "olisa_keypair"
 
-user_data = file("install_Tomcat.sh")
+user_data = file("install_tomcat.sh")
 
 
   tags = {
@@ -59,7 +59,7 @@ user_data = file("install_Tomcat.sh")
 }
 
 # print the url of the jenkins server
-output "tomcat_url" {
+output "jenkins_url" {
   value = "http://${aws_instance.firstinstance.public_ip}:8080"
   description = "jenkins server which is firsinstance from resource block"
 }
@@ -131,31 +131,40 @@ resource "aws_security_group" "allow_tls" {
   vpc_id      = aws_vpc.VPC_main.id
 
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = [aws_vpc.VPC_main.cidr_block]
-  }
-
-  ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [aws_vpc.VPC_main.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = [aws_vpc.VPC_main.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
-ingress {
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Jenkins
+  ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = [aws_vpc.VPC_main.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Tomcat
+  ingress {
+    from_port   = 8081
+    to_port     = 8081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
